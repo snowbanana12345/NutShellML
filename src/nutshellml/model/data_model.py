@@ -40,3 +40,11 @@ class TickData:
             raise ValueError(f"bid sizes array should be the same length as timestamp : {length}")
         if self.ask_sizes.shape[1] != length:
             raise ValueError(f"ask sizes array should be the same length as timestamp : {length}")
+
+
+@dataclass
+class BarData:
+    timestamps : np.array
+    close_price : np.array
+    volume : np.array
+    ticks : np.array
