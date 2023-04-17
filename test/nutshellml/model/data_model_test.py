@@ -37,3 +37,12 @@ class DataModelTest(unittest.TestCase):
         bar_data = BarData(timestamps = ts_col, close_price=  close, volume = volume, ticks = ticks)
         self.assertIsNotNone(bar_data)
 
+    def test_bar_data_fail_check(self):
+        def try_create_bar_data_obj():
+            ts_col = np.array([1, 2, 3, 4, 5], dtype=np.int64)
+            close = np.array([3.0, 1.0, 5.0, 6.0, 5.0], dtype=float)
+            volume = np.array([5.0, 5.0, 4.0, 3.0, 2.0], dtype=float)
+            ticks = np.array([1, 5, 4, 3, 6], dtype=np.int64)
+            bar_data = BarData(timestamps=ts_col, close_price=close, volume=volume, ticks=ticks)
+        self.assertIsNotNone(ValueError, try_create_bar_data_obj)
+
