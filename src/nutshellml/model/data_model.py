@@ -1,6 +1,6 @@
 import numpy as np
 from dataclasses import dataclass
-
+import pandas as pd
 
 @dataclass
 class TickData:
@@ -41,6 +41,24 @@ class TickData:
         if self.ask_sizes.shape[1] != length:
             raise ValueError(f"ask sizes array should be the same length as timestamp : {length}")
 
+    def to_dataframe(self):
+        df = pd.DataFrame({
+            "ts" : self.timestamps,
+            "p" : self.trade_prices,
+            "q" : self.trade_sizes,
+        })
+
+        for i,bid_px in enumerate(self.bid_prices):
+            df["bp" + str(i + 1)] = bid_px
+        for i,bid_sz in enumerate(self.bid_sizes):
+            df["bs" + str(i + 1)] = bid_sz
+        for i,ask_px in enumerate(self.ask_prices):
+            df["ap" + str(i + 1)] = ask_px
+        for i,ask_sz in enumerate(self.ask_sizes):
+            df["as" + str(i + 1)] = ask_sz
+
+        return df
+
 
 @dataclass
 class BarData:
@@ -65,3 +83,11 @@ class BarData:
             raise ValueError(f"volume array should be the same length as timestamp : {length}")
         if self.ticks.shape[0] != length:
             raise ValueError(f"ticks array should be the same length as timestamp : {length}")
+
+    def to_dataframe(self) -> pd.DataFrame:
+        return pd.DataFrame({
+            "ts" : self.timestamps,
+            "p" : self.close_price,
+            "q" : self.volume,
+            "ti" : self.ticks
+        })
