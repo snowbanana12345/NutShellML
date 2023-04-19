@@ -18,7 +18,7 @@ def time_sample_tick_to_bar(tick_data : TickData, frequency : timedelta = timede
     volume = tmp_df.q.resample(rule).sum()
     ticks = tmp_df.q.resample(rule).count()
     sampled_timestamps = np.array([ts.value for ts in close_prices.index], np.int64)
-    return BarData(timestamps = sampled_timestamps, close_price = close_prices, volume = volume, ticks = ticks)
+    return BarData(timestamps = sampled_timestamps, close_price = close_prices.to_numpy(), volume = volume.to_numpy(), ticks = ticks.to_numpy())
 
 
 def tick_sample_to_bar(tick_data : TickData, frequency : int) -> BarData:
@@ -30,15 +30,15 @@ def tick_sample_to_bar(tick_data : TickData, frequency : int) -> BarData:
     )
     tmp_df = tmp_df[tmp_df.p > 0]
     tmp_df = tmp_df[tmp_df.q > 0]
-    ts_series = tmp_df.ts.groupby(np.arange(tmp_df.index // frequency)).first()
-    close_series = tmp_df.p.groupby(np.arange(tmp_df.index // frequency)).last()
-    volume_series = tmp_df.q.groupby(np.arange(tmp_df.index // frequency)).sum()
-    tick_series = np.array([frequency for _ in range(len(ts_series))])
+    ts_series = tmp_df.ts.groupby(tmp_df.index // frequency).first()
+    close_series = tmp_df.p.groupby(tmp_df.index // frequency).last()
+    volume_series = tmp_df.q.groupby(tmp_df.index // frequency).sum()
+    tick_series = tmp_df.ts.groupby(tmp_df.index // frequency).count()
     return BarData(
-        timestamps = ts_series.numpy(),
-        close_price = ts_series.numpy(),
-        volume = volume_series.numpy(),
-        tick_esries = tick_series.numpy()
+        timestamps = ts_series.to_numpy(),
+        close_price = close_series.to_numpy(),
+        volume = volume_series.to_numpy(),
+        ticks = tick_series.to_numpy()
     )
 
 
