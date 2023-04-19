@@ -83,3 +83,48 @@ def volume_sample_to_bar(tick_data : TickData, volume_per_bar : int) -> BarData:
     vol_series = tmp_df.q.resample(rule).sum()
     tick_series = tmp_df.q.resample(rule).count()
     return BarData(timestamps = ts_series.to_numpy(), close_price = close_series.to_numpy(),volume = vol_series.to_numpy(), ticks = tick_series.to_numpy())
+
+
+def dollar_sample_to_bar(tick_data : TickData, dollar_per_bar : float):
+    # TODO : replace this portion with native C code
+    dollar_counter = 0
+    resampled_ts = []
+    resampled_prices = []
+    resampled_quantities = []
+    for ts, p, q in zip(tick_data.timestamps, tick_data.trade_prices, tick_data.trade_sizes):
+        if dollar_counter + p*q <= dollar_per_bar:
+            dollar_counter += p*q
+            resampled_ts.append(ts)
+            resampled_prices.append(p)
+            resampled_quantities.append(q)
+            if dollar_counter == dollar_per_bar:
+                dollar_counter = 0
+        else:
+            resampled_ts.append(ts)
+            resampled_prices.append(p)
+            resampled_quantities.append((dollar_per_bar - dollar_counter) / p)
+            remaining_dollars = p*q - dollar_per_bar + dollar_counter
+            while remaining_dollars >= dollar_per_bar:
+                remaining_dollars -= dollar_per_bar
+                resampled_ts.append(ts)
+                resampled_prices.append(p)
+                resampled_quantities.append(dollar_per_bar / p)
+            if remaining_dollars > 0:
+                resampled_ts.append(ts)
+                resampled_prices.append(p)
+                resampled_quantities.append(remaining_dollars / p)
+            dollar_counter = remaining_dollars
+
+    tmp_df = pd.DataFrame({
+        "ts": resampled_ts,
+        "p": resampled_prices,
+        "q": resampled_quantities
+    })
+    dollar_time_series = (tmp_df.q * tmp_df.p).cumsum()
+    tmp_df.index = [pd.Timestamp(v * 1E9 - 1) for v in dollar_time_series.values]
+    rule = str(int(dollar_per_bar)) + "S"
+    ts_series = tmp_df.ts.resample(rule).first()
+    close_series = tmp_df.p.resample(rule).last()
+    vol_series = tmp_df.q.resample(rule).sum()
+    tick_series = tmp_df.q.resample(rule).count()
+    return BarData(timestamps=ts_series.to_numpy(), close_price=close_series.to_numpy(), volume=vol_series.to_numpy(), ticks=tick_series.to_numpy())
