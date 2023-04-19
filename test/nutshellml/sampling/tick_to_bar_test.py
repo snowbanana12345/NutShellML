@@ -50,4 +50,25 @@ class SamplingTest(unittest.TestCase):
         self.assertTrue((expected_bar.volume == actual_bar.volume).all())
         self.assertTrue((expected_bar.ticks == actual_bar.ticks).all())
 
+    def test_volume_sampling(self):
+        timestamps = np.arange(1E9, 15 * 1E9, 1E9)
+        trade_prices = np.array([1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0, 11.0, 12.0, 5.0, 7.0], dtype = float)
+        trade_sizes = np.array([4.0,7.0,3.0,6.0, 5.0,3.0,8.0,6.0, 18.0, 6.0, 36.0, 18.0, 6.0, 4.0], dtype = float)
+        bid_prices = np.array([[0 for _ in range(14)]], dtype=float)
+        ask_prices = np.array([[0 for _ in range(14)]], dtype=float)
+        bid_sizes = np.array([[0 for _ in range(14)]], dtype=float)
+        ask_sizes = np.array([[0 for _ in range(14)]], dtype=float)
+        tick_data = TickData(timestamps, trade_prices, trade_sizes, bid_prices, bid_sizes, ask_prices, ask_sizes)
+
+        expec_bar_ts = np.array([1E9, 5E9, 8E9, 10E9, 11E9, 11E9, 13E9], dtype=float)
+        expec_close = np.array([4.0, 8.0, 9.0, 11.0, 11.0, 12.0, 7.0], dtype=float)
+        expec_vol = np.array([20.0, 20.0, 20.0, 20.0, 20.0, 20.0, 10.0], dtype=float)
+        expec_ticks = np.array([4, 4, 2, 2, 1, 2, 2], dtype=np.int64)
+        expected_bar = BarData(timestamps=expec_bar_ts, close_price=expec_close, volume=expec_vol, ticks=expec_ticks)
+
+        actual_bar = sampler.volume_sample_to_bar(tick_data, volume_per_bar = 20)
+        self.assertTrue((expected_bar.timestamps == actual_bar.timestamps).all())
+        self.assertTrue((expected_bar.close_price == actual_bar.close_price).all())
+        self.assertTrue((expected_bar.volume == actual_bar.volume).all())
+        self.assertTrue((expected_bar.ticks == actual_bar.ticks).all())
 

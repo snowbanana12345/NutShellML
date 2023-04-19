@@ -1,5 +1,5 @@
 import numpy as np
-from datetime import timedelta, datetime
+from datetime import timedelta
 from src.nutshellml.model.data_model import TickData, BarData
 import pandas as pd
 
@@ -28,8 +28,6 @@ def tick_sample_to_bar(tick_data : TickData, frequency : int) -> BarData:
             "q" : tick_data.trade_sizes,
         }, index = pd.RangeIndex(len(tick_data))
     )
-    tmp_df = tmp_df[tmp_df.p > 0]
-    tmp_df = tmp_df[tmp_df.q > 0]
     ts_series = tmp_df.ts.groupby(tmp_df.index // frequency).first()
     close_series = tmp_df.p.groupby(tmp_df.index // frequency).last()
     volume_series = tmp_df.q.groupby(tmp_df.index // frequency).sum()
@@ -42,5 +40,46 @@ def tick_sample_to_bar(tick_data : TickData, frequency : int) -> BarData:
     )
 
 
+def volume_sample_to_bar(tick_data : TickData, volume_per_bar : int) -> BarData:
+    # TODO : replace this portion with native C code
+    vol_counter = 0
+    resampled_ts = []
+    resampled_prices = []
+    resampled_quantities = []
+    for ts, p, q in zip(tick_data.timestamps, tick_data.trade_prices, tick_data.trade_sizes):
+        if vol_counter + q <= volume_per_bar:
+            vol_counter += q
+            resampled_ts.append(ts)
+            resampled_prices.append(p)
+            resampled_quantities.append(q)
+            if vol_counter == volume_per_bar:
+                vol_counter = 0
+        else :
+            resampled_ts.append(ts)
+            resampled_prices.append(p)
+            resampled_quantities.append(volume_per_bar - vol_counter)
+            remaining_quantity = q - volume_per_bar + vol_counter
+            while remaining_quantity >= volume_per_bar:
+                remaining_quantity -= volume_per_bar
+                resampled_ts.append(ts)
+                resampled_prices.append(p)
+                resampled_quantities.append(volume_per_bar)
+            if remaining_quantity > 0:
+                resampled_ts.append(ts)
+                resampled_prices.append(p)
+                resampled_quantities.append(remaining_quantity)
+            vol_counter = remaining_quantity
 
-
+    tmp_df = pd.DataFrame({
+        "ts" : resampled_ts,
+        "p" : resampled_prices,
+        "q" : resampled_quantities
+    })
+    vol_time_series = tmp_df.q.cumsum()
+    tmp_df.index = [pd.Timestamp(v * 1E9 - 1) for v in vol_time_series.values]
+    rule = str(volume_per_bar) + "S"
+    ts_series = tmp_df.ts.resample(rule).first()
+    close_series = tmp_df.p.resample(rule).last()
+    vol_series = tmp_df.q.resample(rule).sum()
+    tick_series = tmp_df.q.resample(rule).count()
+    return BarData(timestamps = ts_series.to_numpy(), close_price = close_series.to_numpy(),volume = vol_series.to_numpy(), ticks = tick_series.to_numpy())
