@@ -13,6 +13,20 @@ class TickData:
     ask_sizes : np.array
 
     def __post_init__(self):
+        if not isinstance(self.timestamps, np.array):
+            raise ValueError("timestamp array must be an numpy array")
+        if not isinstance(self.trade_prices, np.array):
+            raise ValueError("trade_prices array must be an numpy array")
+        if not isinstance(self.trade_sizes, np.array):
+            raise ValueError("trade_prices array must be an numpy array")
+        if not isinstance(self.bid_prices, np.array):
+            raise ValueError("bid_prices array must be an numpy array")
+        if not isinstance(self.bid_sizes, np.array):
+            raise ValueError("bid_sizes array must be an numpy array")
+        if not isinstance(self.ask_prices, np.array):
+            raise ValueError("ask_prices array must be an numpy array")
+        if not isinstance(self.ask_sizes, np.array):
+            raise ValueError("ask_sizes array must be an numpy array")
         if len(self.timestamps.shape) != 1:
             raise ValueError("timestamp array should be 1d")
         if len(self.trade_prices.shape) != 1:
@@ -41,6 +55,9 @@ class TickData:
         if self.ask_sizes.shape[1] != length:
             raise ValueError(f"ask sizes array should be the same length as timestamp : {length}")
 
+    def __len__(self):
+        return len(self.timestamps)
+
     def to_dataframe(self):
         df = pd.DataFrame({
             "ts" : self.timestamps,
@@ -68,6 +85,14 @@ class BarData:
     ticks : np.array
 
     def __post_init__(self):
+        if not isinstance(self.timestamps, np.array):
+            raise ValueError("timestamps must be an np array")
+        if not isinstance(self.close_price, np.array):
+            raise ValueError("close_price must be an np array")
+        if not isinstance(self.volume, np.array):
+            raise ValueError("volume must be an np array")
+        if not isinstance(self.ticks, np.array):
+            raise ValueError("ticks must be an np array")
         if len(self.timestamps.shape) != 1:
             raise ValueError("timestamps array must be 1d")
         if len(self.close_price.shape) != 1:
@@ -91,3 +116,6 @@ class BarData:
             "q" : self.volume,
             "ti" : self.ticks
         })
+
+    def __len__(self):
+        return len(self.timestamps)
