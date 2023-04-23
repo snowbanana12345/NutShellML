@@ -22,7 +22,7 @@ class SamplingTest(unittest.TestCase):
         expec_ticks = np.array([4, 0, 4, 1, 1, 1, 3], dtype = np.int64)
         expected_bar = BarData(timestamps = expec_bar_ts, close_price = expec_close, volume = expec_vol, ticks = expec_ticks)
 
-        actual_bar = sampler.time_sample_tick_to_bar(tick_data, frequency = timedelta(seconds = 15))
+        actual_bar = sampler.time_sample_tick_to_bar(tick_data, time_per_bar= timedelta(seconds = 15))
         self.assertTrue(all(expected_bar.timestamps == actual_bar.timestamps))
         self.assertTrue(all(expected_bar.close_price == actual_bar.close_price))
         self.assertTrue(all(expected_bar.volume == actual_bar.volume))
@@ -44,7 +44,7 @@ class SamplingTest(unittest.TestCase):
         expec_ticks = np.array([4, 4, 3], dtype=np.int64)
         expected_bar = BarData(timestamps=expec_bar_ts, close_price=expec_close, volume=expec_vol, ticks=expec_ticks)
 
-        actual_bar = sampler.tick_sample_to_bar(tick_data, frequency = 4)
+        actual_bar = sampler.tick_sample_to_bar(tick_data, ticks_per_bar= 4)
         self.assertTrue((expected_bar.timestamps == actual_bar.timestamps).all())
         self.assertTrue((expected_bar.close_price == actual_bar.close_price).all())
         self.assertTrue((expected_bar.volume == actual_bar.volume).all())
