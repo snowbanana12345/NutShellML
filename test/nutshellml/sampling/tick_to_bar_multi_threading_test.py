@@ -6,6 +6,7 @@ import src.nutshellml.sampling.tick_to_bar as sampler
 from datetime import timedelta
 import threading
 from typing import List
+import time
 
 
 def generate_random_ticks(sample_size : int) -> TickData:
@@ -117,3 +118,19 @@ class MultiThreadCorrectnessTest(unittest.TestCase):
             self.assertTrue(all(seq_result.close_price == par_result.close_price))
             self.assertTrue(all(seq_result.volume == par_result.volume))
             self.assertTrue(all(seq_result.ticks == par_result.ticks))
+
+
+class MultiThreadPerfTest(unittest.TestCase):
+    def test_time_par_sampling_perf(self):
+        sample_size = 1000000
+        num_threads = 4
+        interval = timedelta(seconds = 30)
+        raw_data = generate_random_ticks(sample_size)
+        workers = [threading.Thread(target = sampler.time_sample_tick_to_bar, args = (raw_data, interval)) for _ in range(num_threads)]
+        start_time = time.time()
+        _ = [worker.start() for worker in workers]
+        _ = [worker.join() for worker in workers]
+        end_time = time.time()
+        print(f"Time taken : {end_time - start_time}")
+
+
