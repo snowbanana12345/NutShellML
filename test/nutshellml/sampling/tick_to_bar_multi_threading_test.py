@@ -95,3 +95,25 @@ class MultiThreadCorrectnessTest(unittest.TestCase):
             self.assertTrue(all(seq_result.close_price == par_result.close_price))
             self.assertTrue(all(seq_result.volume == par_result.volume))
             self.assertTrue(all(seq_result.ticks == par_result.ticks))
+
+    def test_dollar_sampling_correctness(self):
+        dollars = [1, 7, 11, 13, 19, 127]
+        seq_results = [sampler.dollar_sample_to_bar(self.raw_data, dollar) for dollar in dollars]
+
+        def sample_into_holder(raw_data: TickData, v: int, holder: ResultHolder):
+            result = sampler.dollar_sample_to_bar(raw_data, v)
+            holder.set(result)
+
+        holders = [ResultHolder() for _ in range(len(dollars))]
+        workers: List[threading.Thread] = [
+            threading.Thread(target=sample_into_holder, args=(self.raw_data, interval, holder))
+            for interval, holder in zip(dollars, holders)]
+        _ = [worker.start() for worker in workers]
+        _ = [worker.join() for worker in workers]
+        par_results: List[BarData] = [holder.value for holder in holders]
+
+        for seq_result, par_result in zip(seq_results, par_results):
+            self.assertTrue(all(seq_result.timestamps == par_result.timestamps))
+            self.assertTrue(all(seq_result.close_price == par_result.close_price))
+            self.assertTrue(all(seq_result.volume == par_result.volume))
+            self.assertTrue(all(seq_result.ticks == par_result.ticks))
